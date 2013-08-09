@@ -1,4 +1,4 @@
-nrf24_xmeag
+nRF24L01+ xMega library
 ===========
 
-Nrf20L01 library for atmel xmega family.
+nRF24L01 library for Atmel xMega family. 
