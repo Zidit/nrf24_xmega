@@ -2,14 +2,14 @@
 
 #include "spi.h"
 
-spi::spi(SPI_t* spi, PORT_t* spiPort, const uint8_t mosiPin, const uint8_t clkPin)
+spiDriver::spiDriver(SPI_t* spi, PORT_t* spiPort, const uint8_t mosiPin, const uint8_t clkPin) : _spi(spi)
 {
-    _spi = spi;
-    _spi->CTRL = SPI_MASTER_bm | SPI_MODE0_bm | SPI_PRESCALER_DIV16_gc ;
+   _spi->CTRL = SPI_MASTER_bm | SPI_MODE0_bm | SPI_PRESCALER_DIV16_gc ;
+    SPIC.CTRL = SPI_MASTER_bm | SPI_MODE0_bm | SPI_PRESCALER_DIV16_gc ;
     spiPort->DIRSET = (1 << mosiPin) | (1 << clkPin);
 }
 
-void spi::setCsPin(PORT_t* csPort, const uint8_t csPin)
+void spiDriver::setCsPin(PORT_t* csPort, const uint8_t csPin)
 {
     _csPort = csPort;
     _csPinBm = 1 << csPin;
@@ -18,26 +18,27 @@ void spi::setCsPin(PORT_t* csPort, const uint8_t csPin)
     _csPort->OUTSET = _csPinBm;
 }
 
-void spi::setSpeed(SPI_PRESCALER_enum prescaler, bool doubleSpeed)
+void spiDriver::setSpeed(SPI_PRESCALER_enum prescaler, bool doubleSpeed)
 {
     _spi->CTRL &= ~(SPI_PRESCALER_gm | SPI_CLK2X_bm);
     _spi->CTRL |= prescaler;
     if (doubleSpeed) _spi->CTRL |= SPI_CLK2X_bm;
 }
 
-void spi::setMasterMode(bool master)
+void spiDriver::setMasterMode(bool master)
 {
     if(master) _spi->CTRL |= SPI_MASTER_bm;
     else _spi->CTRL &= ~ SPI_MASTER_bm;
 }
 
-void spi::setMode(SPI_MODE_enum mode)
+void spiDriver::setMode(SPI_MODE_enum mode)
 {
     _spi->CTRL &= ~(SPI_MODE_gm);
     _spi->CTRL |= mode;
+
 }
 
-void spi::transmit(uint8_t* data, uint8_t len)
+void spiDriver::transmit(uint8_t* data, uint8_t len)
 {
     _csPort->OUTCLR = _csPinBm;
     _isTransmitting = true;
@@ -48,7 +49,7 @@ void spi::transmit(uint8_t* data, uint8_t len)
     _spi->DATA = _dataPtr[0];
 }
 
-uint8_t spi::transmit(uint8_t data)
+uint8_t spiDriver::transmit(uint8_t data)
 {
     _csPort->OUTCLR = _csPinBm;
     _spi->DATA = data;
@@ -58,16 +59,16 @@ uint8_t spi::transmit(uint8_t data)
     return _spi->DATA;
 }
 
-bool spi::transmitReady()
+bool spiDriver::transmitReady()
 {
     bool ret = _transmitReady;
     _transmitReady = false;
     return ret;
 }
 
-void spi::flush()
+void spiDriver::flush()
 {
     while(!_transmitReady && _isTransmitting);
 }
 
-void spiHookTransmitReady(){;}
+

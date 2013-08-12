@@ -4,12 +4,12 @@
 
 #include <avr/io.h>
 
-void __attribute__((weak)) spiHookTransmitReady();
 
-class spi
+
+class spiDriver
 {
 public:
-    spi(SPI_t* spi, PORT_t* spiPort, const uint8_t mosiPin, const uint8_t clkPin);
+    spiDriver(SPI_t* spi, PORT_t* spiPort, const uint8_t mosiPin, const uint8_t clkPin);
     void setCsPin(PORT_t* port, const uint8_t pin_nbr);
     void setSpeed(SPI_PRESCALER_enum prescaler, bool doubleSpeed);
     void setMode(SPI_MODE_enum mode);
@@ -24,7 +24,7 @@ public:
     bool transmitReady();
     void flush();
 
-    void interrupt()
+    bool interrupt()
     {
         _dataPtr[_bytesSent] = _spi->DATA;
         _bytesSent++;
@@ -34,18 +34,19 @@ public:
             _isTransmitting = false;
             _csPort->OUTSET = _csPinBm;
             _spi->INTCTRL = SPI_INTLVL_OFF_gc;
-            spiHookTransmitReady();
-            return;
+            return true;
         }
         else
         {
             _spi->DATA = _dataPtr[_bytesSent];
+            return false;
         }
     }
 
 
+
 private:
-    SPI_t* _spi;
+    SPI_t* const _spi;
     PORT_t* _csPort;
     uint8_t _csPinBm;
 

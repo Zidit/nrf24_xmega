@@ -84,7 +84,7 @@ SRC =
 
 
 # List C++ source files here. (C dependencies are automatically generated.)
-CPPSRC = $(TARGET).cpp utils.cpp serial.cpp ../spi.cpp
+CPPSRC = $(TARGET).cpp utils.cpp serial.cpp ../spi.cpp ../nrf24.cpp
 
 
 # List Assembler source files here.

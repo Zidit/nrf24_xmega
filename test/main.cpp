@@ -8,14 +8,20 @@
 
 #include "serial.h"
 #include "utils.h"
+#include "../nrf24.h"
 #include "../spi.h"
 
 uart debug(&USARTC0, 57600);
 ISR (USARTC0_RXC_vect){ debug.rxInterrupt(); }
 ISR (USARTC0_DRE_vect){ debug.txInterrupt(); }
 
-spi nrf(&SPIC, &PORTC, 5, 7);
-ISR (SPIC_INT_vect) { nrf.interrupt();}
+spiDriver nrfSpi(&SPIC, &PORTC, 5, 7);
+nrf24 nrf(&nrfSpi, &PORTC, 4);
+
+
+ISR (SPIC_INT_vect) { if(nrfSpi.interrupt()) nrf.spiInterrupt(); }
+
+
 
 
 int main(void)
@@ -29,13 +35,11 @@ int main(void)
     PMIC.CTRL = PMIC_HILVLEN_bm | PMIC_MEDLVLEN_bm | PMIC_LOLVLEN_bm;
 	sei();
 
-    nrf.setMasterMode(true);
-    nrf.setMode(SPI_MODE_0_gc);
-    nrf.setSpeed(SPI_PRESCALER_DIV16_gc, false);
-    nrf.setCsPin(&PORTC, 4);
-    nrf.enable();
+
 
     debug.sendStringPgm(PSTR("\n\n\nTest \n"));
+
+
 
     char asd[] = "asdlol";
 
@@ -47,8 +51,8 @@ int main(void)
             data = debug.getChar();
             debug.sendString(asd);
             debug.sendChar('\n');
-            nrf.transmit((uint8_t*)asd, 6);
-            nrf.flush();
+            nrfSpi.transmit((uint8_t*)asd, 6);
+            nrfSpi.flush();
             debug.sendString(asd);
             debug.sendChar('\n');
             debug.sendChar('\n');
@@ -58,11 +62,5 @@ int main(void)
 
     return 0;
 }
-/*
-void spiHookTransmitReady()
-{
-    debug.sendChar('T');
 
-
-}*/
 
