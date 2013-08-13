@@ -15,11 +15,12 @@ uart debug(&USARTC0, 57600);
 ISR (USARTC0_RXC_vect){ debug.rxInterrupt(); }
 ISR (USARTC0_DRE_vect){ debug.txInterrupt(); }
 
-spiDriver nrfSpi(&SPIC, &PORTC, 5, 7);
-nrf24 nrf(&nrfSpi, &PORTC, 4);
+spiDriver nrfSpi(&SPIC, &PORTC, 5, 6, 7);
+nrf24 nrf(&nrfSpi);
 
 
 ISR (SPIC_INT_vect) { if(nrfSpi.interrupt()) nrf.spiInterrupt(); }
+ISR (PORTC_INT0_vect) {};
 
 
 

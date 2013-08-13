@@ -10,9 +10,10 @@
 class nrf24
 {
 public:
-    nrf24(spiDriver* spi, PORT_t* csnPort, const uint8_t csnPin);
-    void setIqrPin(PORT_t* iqrPort, const uint8_t iqrPin);
-    void setCePin(PORT_t* cePort, const uint8_t cePin);
+    nrf24(spiDriver* const spi);
+    void setIqrPin(PORT_t* const iqrPort, const uint8_t iqrPin);
+    void setCePin(PORT_t* const cePort, const uint8_t cePin);
+    void setCsnPin(PORT_t* const csnPort, const uint8_t csnPin);
 
     void setRegister(uint8_t* data, uint8_t len);
     void getRegister(uint8_t* data, uint8_t len);
@@ -21,16 +22,21 @@ public:
 
     uint8_t getStatus();
 
-    void spiInterrupt();
-    void pinInterrupt();
+    void spiInterrupt(){;}
+    void pinInterrupt(){;}
 
 private:
     spiDriver* _spi;
 
     PORT_t* _iqrPort;
-    uint8_t _iqrPin;
+    uint8_t _iqrPinBm;
+
     PORT_t* _cePort;
-    uint8_t _cePin;
+    uint8_t _cePinBm;
+
+    PORT_t* _csnPort;
+    uint8_t _csnPinBm;
+
 };
 
 

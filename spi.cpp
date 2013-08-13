@@ -2,20 +2,11 @@
 
 #include "spi.h"
 
-spiDriver::spiDriver(SPI_t* spi, PORT_t* spiPort, const uint8_t mosiPin, const uint8_t clkPin) : _spi(spi)
+spiDriver::spiDriver(SPI_t* spi, PORT_t* spiPort, const uint8_t mosiPin, const uint8_t misoPin, const uint8_t clkPin) : _spi(spi)
 {
-   _spi->CTRL = SPI_MASTER_bm | SPI_MODE0_bm | SPI_PRESCALER_DIV16_gc ;
-    SPIC.CTRL = SPI_MASTER_bm | SPI_MODE0_bm | SPI_PRESCALER_DIV16_gc ;
+    _spi->CTRL = SPI_MASTER_bm | SPI_MODE0_bm | SPI_PRESCALER_DIV16_gc ;
     spiPort->DIRSET = (1 << mosiPin) | (1 << clkPin);
-}
-
-void spiDriver::setCsPin(PORT_t* csPort, const uint8_t csPin)
-{
-    _csPort = csPort;
-    _csPinBm = 1 << csPin;
-
-    _csPort->DIRSET = _csPinBm;
-    _csPort->OUTSET = _csPinBm;
+    spiPort->DIRCLR = (1 << misoPin);
 }
 
 void spiDriver::setSpeed(SPI_PRESCALER_enum prescaler, bool doubleSpeed)
@@ -40,7 +31,6 @@ void spiDriver::setMode(SPI_MODE_enum mode)
 
 void spiDriver::transmit(uint8_t* data, uint8_t len)
 {
-    _csPort->OUTCLR = _csPinBm;
     _isTransmitting = true;
     _spi->INTCTRL = SPI_INTLVL_MED_gc;
     _dataPtr = data;
@@ -51,11 +41,10 @@ void spiDriver::transmit(uint8_t* data, uint8_t len)
 
 uint8_t spiDriver::transmit(uint8_t data)
 {
-    _csPort->OUTCLR = _csPinBm;
+
     _spi->DATA = data;
     while (!(_spi->STATUS & SPI_IF_bm));
 
-    _csPort->OUTSET = _csPinBm;
     return _spi->DATA;
 }
 
