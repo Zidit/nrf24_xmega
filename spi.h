@@ -25,8 +25,7 @@ public:
 
     bool interrupt()
     {
-        _dataPtr[_bytesSent] = _spi->DATA;
-        _bytesSent++;
+        _dataPtr[_bytesSent++] = _spi->DATA;
         if(_dataLen == _bytesSent)
         {
             _transmitReady = true;
@@ -49,8 +48,8 @@ private:
     uint8_t* _dataPtr;
     volatile bool _transmitReady;
     volatile bool _isTransmitting;
-    volatile uint8_t _bytesSent;
-    volatile uint8_t _dataLen;
+	uint8_t _bytesSent;
+    uint8_t _dataLen;
 };
 
 
