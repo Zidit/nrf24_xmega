@@ -81,7 +81,7 @@ private:
 #define NRF_DYNPD		0x1C
 #define NRF_FEATURE		0x1D
 
-/* Bit Mnemonics */
+
 #define NRF_MASK_RX_DR_bm  (1 << 6)
 #define NRF_MASK_TX_DS_bm  (1 << 5)
 #define NRF_MASK_MAX_RT_bm (1 << 4)
@@ -129,14 +129,12 @@ private:
 #define NRF_TX_EMPTY_bm    (1 << 4)
 #define NRF_RX_FULL_bm     (1 << 1)
 #define NRF_RX_EMPTY _bm   (1 << 0)
-
 #define NRF_PDL_P5_bm      (1 << 5)
 #define NRF_PDL_P4_bm      (1 << 4)
 #define NRF_PDL_P3_bm      (1 << 3)
 #define NRF_PDL_P2_bm      (1 << 2)
 #define NRF_PDL_P1_bm      (1 << 1)
 #define NRF_PDL_P0_bm      (1 << 0)
-
 #define NRF_EN_DPL_bm      (1 << 2)
 #define NRF_EN_ACK_PAY_bm  (1 << 1)
 #define NRF_DYN_ACK_bm     (1 << 0)

@@ -49,17 +49,20 @@ void nrf24::setRegister(uint8_t reg, uint8_t* data, uint8_t len)
 		
 	_spi->flush();
 	_spi->transmit(_buffer, len + 1);
-	
 }
 
 void nrf24::getRegister(uint8_t reg, uint8_t* data, uint8_t len)
 {
-	data[0] = NRF_R_REGISTER | (reg & 0x1F);
+	_buffer[0] = NRF_R_REGISTER | (reg & 0x1F);
 		
 	_spi->flush();
-	_spi->transmit(data, len + 1);
+	_spi->transmit(_buffer, len + 1);
 	_spi->flush();
 	
+	for(uint8_t i = 0; i < len; i++)
+		data[i] = _buffer[i + 1];	
+	
+
 }
 
 uint8_t nrf24::getStatus(){
