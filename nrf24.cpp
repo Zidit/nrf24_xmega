@@ -70,3 +70,14 @@ uint8_t nrf24::getStatus(){
 	return _spi->transmit(NRF_NOP);
 	
 }
+
+void nrf24::flushTX()
+{
+	_spi->transmit(NRF_FLUSH_TX);
+}
+
+void nrf24::flushRX()
+{
+	_spi->transmit(NRF_FLUSH_RX);
+}
+

@@ -19,6 +19,8 @@ public:
     void getRegister(uint8_t reg, uint8_t* data, uint8_t len);
     void sendData(uint8_t* data, uint8_t len);
     void reciveData(uint8_t* data, uint8_t len);
+	void flushTX();
+	void flushRX();
 
     uint8_t getStatus();
 
@@ -125,7 +127,7 @@ private:
 #define NRF_RX_PW_P4_bm    (0x1F << 0)
 #define NRF_RX_PW_P5_bm    (0x1F << 0)
 #define NRF_TX_REUSE_bm    (1 << 6)
-#define NRF_TX_FULL_bm     (1 << 5)
+#define NRF_TXFIFO_FULL_bm (1 << 5)
 #define NRF_TX_EMPTY_bm    (1 << 4)
 #define NRF_RX_FULL_bm     (1 << 1)
 #define NRF_RX_EMPTY _bm   (1 << 0)
