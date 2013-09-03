@@ -10,9 +10,8 @@ nrf24::nrf24(spiDriver* const spi)
 
     _spi->setMasterMode(true);
     _spi->setMode(SPI_MODE_0_gc);
-    _spi->setSpeed(SPI_PRESCALER_DIV16_gc, false);
+    _spi->setSpeed(SPI_PRESCALER_DIV4_gc, true);
     _spi->enable();
-
 
 }
 
@@ -35,20 +34,36 @@ void nrf24::setCePin(PORT_t* const cePort, const uint8_t cePin)
     _cePinBm = 1 << cePin;
     _cePort = cePort;
 
-    _cePort->OUTCLR = _iqrPinBm;
-    _cePort->DIRSET = _iqrPinBm;
+    _cePort->OUTCLR = _cePinBm;
+    _cePort->DIRSET = _cePinBm;
 
 }
 
-void nrf24::setCsnPin(PORT_t* const csnPort, const uint8_t csnPin)
+
+
+void nrf24::setRegister(uint8_t reg, uint8_t* data, uint8_t len)
 {
-    _csnPinBm = 1 << csnPin;
-    _csnPort = csnPort;
-
-    _csnPort->OUTSET = _iqrPinBm;
-    _csnPort->DIRSET = _iqrPinBm;
-
-
+	_buffer[0] = NRF_W_REGISTER | (reg & 0x1F);
+	for(uint8_t i = 0; i < len; i++)
+		_buffer[i + 1] = data[i];
+		
+	_spi->flush();
+	_spi->transmit(_buffer, len + 1);
+	
 }
 
+void nrf24::getRegister(uint8_t reg, uint8_t* data, uint8_t len)
+{
+	data[0] = NRF_R_REGISTER | (reg & 0x1F);
+		
+	_spi->flush();
+	_spi->transmit(data, len + 1);
+	_spi->flush();
+	
+}
 
+uint8_t nrf24::getStatus(){
+
+	return _spi->transmit(NRF_NOP);
+	
+}

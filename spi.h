@@ -9,7 +9,7 @@
 class spiDriver
 {
 public:
-    spiDriver(SPI_t* const spi, PORT_t* const spiPort, const uint8_t mosiPin, const uint8_t misoPin, const uint8_t clkPin);
+    spiDriver(SPI_t* const spi, PORT_t* const spiPort, const uint8_t ssPin, const uint8_t mosiPin, const uint8_t misoPin, const uint8_t clkPin);
     void setSpeed(const SPI_PRESCALER_enum prescaler, const bool doubleSpeed);
     void setMode(const SPI_MODE_enum mode);
     void setMasterMode(const bool master);
@@ -31,6 +31,7 @@ public:
             _transmitReady = true;
             _isTransmitting = false;
             _spi->INTCTRL = SPI_INTLVL_OFF_gc;
+		    _spiPort->OUTSET = _ssPinBm;
             return true;
         }
         else
@@ -44,6 +45,8 @@ public:
 
 private:
     SPI_t* const _spi;
+    PORT_t* _spiPort;
+    uint8_t _ssPinBm;
 
     uint8_t* _dataPtr;
     volatile bool _transmitReady;
