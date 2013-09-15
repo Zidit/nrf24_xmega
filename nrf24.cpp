@@ -1,7 +1,7 @@
 
 
 #include "nrf24.h"
-
+#include <util/delay.h>
 
 
 nrf24::nrf24(spiDriver* const spi, PORT_t* const ssPort, const uint8_t ssPin, PORT_t* const iqrPort, const uint8_t iqrPin, PORT_t* const cePort, const uint8_t cePin)
@@ -77,18 +77,87 @@ void nrf24::getRegister(uint8_t reg, uint8_t* data, uint8_t len)
 }
 
 uint8_t nrf24::getStatus(){
-
+	
+	_spi->flush();
 	return _spi->transmit(NRF_NOP, _ssPort, _ssPinBm);
 	
 }
 
-void nrf24::flushTX()
+void nrf24::flushTx()
 {
+	_spi->flush();
 	_spi->transmit(NRF_FLUSH_TX, _ssPort, _ssPinBm);
 }
 
-void nrf24::flushRX()
+void nrf24::flushRx()
 {
+	_spi->flush();
 	_spi->transmit(NRF_FLUSH_RX, _ssPort, _ssPinBm);
 }
+
+
+void nrf24::sendData(uint8_t* data, uint8_t len)
+{
+	_buffer[0] = NRF_W_TX_PAYLOAD;
+	for(uint8_t i = 0; i < len; i++)
+		_buffer[i + 1] = data[i];
+		
+	_spi->flush();
+	_spi->transmit(_buffer, len + 1, _ssPort, _ssPinBm);
+	_spi->flush();
+	
+	_cePort->OUTSET = _cePinBm;
+	_delay_us(20);
+	_cePort->OUTCLR = _cePinBm;
+
+}
+
+void nrf24::reciveData(uint8_t* data, uint8_t len)
+{
+	_cePort->OUTCLR = _cePinBm;
+
+	_buffer[0] = NRF_R_RX_PAYLOAD;
+	_spi->flush();
+	_spi->transmit(_buffer, len + 1, _ssPort, _ssPinBm);
+	_spi->flush();
+	
+	for(uint8_t i = 0; i < len; i++)
+		data[i] = _buffer[i + 1];	
+
+	uint8_t status = NRF_RX_DR_bm;
+	setRegister(NRF_STATUS, &status, 1);
+	
+	_cePort->OUTSET = _cePinBm;
+		
+}
+
+
+
+void nrf24::primaryRx()
+{
+	_cePort->OUTCLR = _cePinBm;
+
+	flushTx();
+	flushRx();
+	
+	uint8_t status = NRF_PRIM_RX_bm | NRF_PWR_UP_bm | NRF_EN_CRC_bm;
+	setRegister(NRF_CONFIG, &status, 1);
+	
+	_cePort->OUTSET = _cePinBm;
+	
+}
+
+void nrf24::primaryTx()
+{
+	_cePort->OUTCLR = _cePinBm;
+	
+	flushTx();
+	flushRx();
+
+	uint8_t status = NRF_PWR_UP_bm | NRF_EN_CRC_bm;
+	setRegister(NRF_CONFIG, &status, 1);
+}
+
+
+
 

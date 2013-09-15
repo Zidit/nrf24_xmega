@@ -14,13 +14,16 @@ public:
     void setIqrPin(PORT_t* const iqrPort, const uint8_t iqrPin);
     void setCePin(PORT_t* const cePort, const uint8_t cePin);
 	void setSsPin(PORT_t* const ssPort, const uint8_t ssPin);
+	
+	void primaryRx();
+	void primaryTx();
 
     void setRegister(uint8_t reg, uint8_t* data, uint8_t len);
     void getRegister(uint8_t reg, uint8_t* data, uint8_t len);
     void sendData(uint8_t* data, uint8_t len);
     void reciveData(uint8_t* data, uint8_t len);
-	void flushTX();
-	void flushRX();
+	void flushTx();
+	void flushRx();
 
     uint8_t getStatus();
 

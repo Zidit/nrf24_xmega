@@ -40,8 +40,6 @@ ce	 = PD2
 
 */
 
-		
-
 
 spiDriver nrfSpi(&SPIC, &PORTC, 5, 6, 7);
 nrf24 nrf0(&nrfSpi, &PORTC, 4, &PORTC, 1, &PORTC, 0);
@@ -81,6 +79,17 @@ int main(void)
 	
 	_delay_ms(200);
 
+	nrf0.primaryTx();
+	nrf1.primaryRx();
+	
+	uint8_t tmp = 16;
+	nrf0.setRegister(NRF_RX_PW_P0, &tmp, 1);
+	nrf0.setRegister(NRF_RX_PW_P1, &tmp, 1);
+	nrf1.setRegister(NRF_RX_PW_P0, &tmp, 1);
+	nrf1.setRegister(NRF_RX_PW_P1, &tmp, 1);
+	
+	_delay_ms(10);
+	
 	debug.sendString("Nrf 0:");
 	debug.sendChar('\n');	
 	printAllRegisters(nrf0);
@@ -91,6 +100,15 @@ int main(void)
 	printAllRegisters(nrf1);
 	debug.sendChar('\n');	
 	
+	_delay_ms(200);
+	uint8_t tx_data[16] = "jepa jee";
+	uint8_t rx_data[16];
+	nrf0.sendData(tx_data, 16);
+	
+	_delay_ms(200);
+	nrf1.reciveData(rx_data,16);
+	
+	debug.sendString((char*)rx_data);
     while(1)
     {
         uint8_t data;
@@ -98,6 +116,10 @@ int main(void)
         {
 
 			data = debug.getChar();
+
+			printRegister(PSTR("nfr 0 status"), NRF_STATUS, 1, nrf0);	
+			printRegister(PSTR("nfr 1 status"), NRF_STATUS, 1, nrf1);
+			debug.sendChar('\n');
 
         }
 
