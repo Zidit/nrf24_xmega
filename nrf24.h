@@ -10,10 +10,10 @@
 class nrf24
 {
 public:
-    nrf24(spiDriver* const spi);
+    nrf24(spiDriver* const spi, PORT_t* const ssPort, const uint8_t ssPin, PORT_t* const iqrPort, const uint8_t iqrPin, PORT_t* const cePort, const uint8_t cePin);
     void setIqrPin(PORT_t* const iqrPort, const uint8_t iqrPin);
     void setCePin(PORT_t* const cePort, const uint8_t cePin);
-
+	void setSsPin(PORT_t* const ssPort, const uint8_t ssPin);
 
     void setRegister(uint8_t reg, uint8_t* data, uint8_t len);
     void getRegister(uint8_t reg, uint8_t* data, uint8_t len);
@@ -36,6 +36,9 @@ private:
 
     PORT_t* _cePort;
     uint8_t _cePinBm;
+	
+	PORT_t* _ssPort;
+    uint8_t _ssPinBm;
 	
 	uint8_t _buffer[32];
 

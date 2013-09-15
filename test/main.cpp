@@ -11,36 +11,47 @@
 #include "../nrf24.h"
 #include "../spi.h"
 
-void printAllRegisters();
-void printRegister(const char *str, uint8_t reg, uint8_t len);
+void printAllRegisters(nrf24 &nrf);
+void printRegister(const char *str, uint8_t reg, uint8_t len,nrf24 &nrf);
 
-// TX = PD3, RX = PD2
+// TX = PC3, RX = PC2
 
-uart debug(&USARTD0, 57600); 
-ISR (USARTD0_RXC_vect){ debug.rxInterrupt(); }
-ISR (USARTD0_DRE_vect){ debug.txInterrupt(); }
+uart debug(&USARTC0, 57600); 
+ISR (USARTC0_RXC_vect){ debug.rxInterrupt(); }
+ISR (USARTC0_DRE_vect){ debug.txInterrupt(); }
 
 
 /*
+nRF 0
 Miso = PC6
 Mosi = PC5
 clk  = PC7
 csn  = PC4
-irq	 = PC3
+irq	 = PC1
+ce	 = PC0
 
-
+nRF 1
+Miso = PC6
+Mosi = PC5
+clk  = PC7
+csn  = PD0
+irq	 = PD1
+ce	 = PD2
 
 */
-spiDriver nrfSpi(&SPIC, &PORTC, 4, 5, 6, 7);
-nrf24 nrf(&nrfSpi);
+
+		
+
+
+spiDriver nrfSpi(&SPIC, &PORTC, 5, 6, 7);
+nrf24 nrf0(&nrfSpi, &PORTC, 4, &PORTC, 1, &PORTC, 0);
+nrf24 nrf1(&nrfSpi, &PORTD, 0, &PORTD, 1, &PORTD, 2);
 
 
 //ISR (SPIC_INT_vect) { if(nrfSpi.interrupt(&SPIC)) nrf.spiInterrupt(); }
-ISR (PORTC_INT0_vect) {nrf.pinInterrupt();}
+ISR (PORTC_INT0_vect) {nrf0.pinInterrupt();}
+ISR (PORTD_INT0_vect) {nrf1.pinInterrupt();}
 ISR (SPIC_INT_vect) { nrfSpi.interrupt();}
-
-
-
 
 
 int main(void)
@@ -69,9 +80,16 @@ int main(void)
     debug.sendStringPgm(PSTR("\n\n\nTest \n"));
 	
 	_delay_ms(200);
-	
-	printAllRegisters();
 
+	debug.sendString("Nrf 0:");
+	debug.sendChar('\n');	
+	printAllRegisters(nrf0);
+	debug.sendChar('\n');		
+
+	debug.sendString("Nrf 1:");
+	debug.sendChar('\n');	
+	printAllRegisters(nrf1);
+	debug.sendChar('\n');	
 	
     while(1)
     {
@@ -88,40 +106,40 @@ int main(void)
     return 0;
 }
 
-void printAllRegisters()
+void printAllRegisters(nrf24 &nrf)
 {
-	printRegister(PSTR("Config"), NRF_CONFIG, 1);
-	printRegister(PSTR("En AA"), NRF_EN_AA, 1);
-	printRegister(PSTR("En rx pipe"), NRF_EN_RXADDR, 1);
-	printRegister(PSTR("Aw"), NRF_SETUP_AW, 1);
-	printRegister(PSTR("Re trans"), NRF_SETUP_RETR, 1);
-	printRegister(PSTR("RH ch"), NRF_RF_CH, 1);
-	printRegister(PSTR("RF setup"), NRF_RF_SETUP, 1);
-	printRegister(PSTR("Status"), NRF_STATUS, 1);
-	printRegister(PSTR("Obs tx"), NRF_OBSERVE_TX, 1);
-	printRegister(PSTR("RPD"), NRF_RPD, 1);
-	printRegister(PSTR("RX0 addr"), NRF_RX_ADDR_P0, 5);
-	printRegister(PSTR("RX1 addr"), NRF_RX_ADDR_P1, 5);
-	printRegister(PSTR("RX2 addr"), NRF_RX_ADDR_P2, 1);
-	printRegister(PSTR("RX3 addr"), NRF_RX_ADDR_P3, 1);
-	printRegister(PSTR("RX4 addr"), NRF_RX_ADDR_P4, 1);
-	printRegister(PSTR("RX5 addr"), NRF_RX_ADDR_P5, 1);
-	printRegister(PSTR("TX addr"), NRF_TX_ADDR, 5);
+	printRegister(PSTR("Config"), NRF_CONFIG, 1, nrf);
+	printRegister(PSTR("En AA"), NRF_EN_AA, 1, nrf);
+	printRegister(PSTR("En rx pipe"), NRF_EN_RXADDR, 1, nrf);
+	printRegister(PSTR("Aw"), NRF_SETUP_AW, 1, nrf);
+	printRegister(PSTR("Re trans"), NRF_SETUP_RETR, 1, nrf);
+	printRegister(PSTR("RH ch"), NRF_RF_CH, 1, nrf);
+	printRegister(PSTR("RF setup"), NRF_RF_SETUP, 1, nrf);
+	printRegister(PSTR("Status"), NRF_STATUS, 1, nrf);
+	printRegister(PSTR("Obs tx"), NRF_OBSERVE_TX, 1, nrf);
+	printRegister(PSTR("RPD"), NRF_RPD, 1, nrf);
+	printRegister(PSTR("RX0 addr"), NRF_RX_ADDR_P0, 5, nrf);
+	printRegister(PSTR("RX1 addr"), NRF_RX_ADDR_P1, 5, nrf);
+	printRegister(PSTR("RX2 addr"), NRF_RX_ADDR_P2, 1, nrf);
+	printRegister(PSTR("RX3 addr"), NRF_RX_ADDR_P3, 1, nrf);
+	printRegister(PSTR("RX4 addr"), NRF_RX_ADDR_P4, 1, nrf);
+	printRegister(PSTR("RX5 addr"), NRF_RX_ADDR_P5, 1, nrf);
+	printRegister(PSTR("TX addr"), NRF_TX_ADDR, 5, nrf);
 	
-	printRegister(PSTR("RX0 pl"), NRF_RX_PW_P0, 1);
-	printRegister(PSTR("RX1 pl"), NRF_RX_PW_P1, 1);
-	printRegister(PSTR("RX2 pl"), NRF_RX_PW_P2, 1);
-	printRegister(PSTR("RX3 pl"), NRF_RX_PW_P3, 1);
-	printRegister(PSTR("RX4 pl"), NRF_RX_PW_P4, 1);
-	printRegister(PSTR("RX5 pl"), NRF_RX_PW_P5, 1);
+	printRegister(PSTR("RX0 pl"), NRF_RX_PW_P0, 1, nrf);
+	printRegister(PSTR("RX1 pl"), NRF_RX_PW_P1, 1, nrf);
+	printRegister(PSTR("RX2 pl"), NRF_RX_PW_P2, 1, nrf);
+	printRegister(PSTR("RX3 pl"), NRF_RX_PW_P3, 1, nrf);
+	printRegister(PSTR("RX4 pl"), NRF_RX_PW_P4, 1, nrf);
+	printRegister(PSTR("RX5 pl"), NRF_RX_PW_P5, 1, nrf);
 	
-	printRegister(PSTR("FIFO"), NRF_FIFO_STATUS, 1);
-	printRegister(PSTR("Dyn pl"), NRF_DYNPD, 1);
-	printRegister(PSTR("Feature"), NRF_FEATURE, 1);
+	printRegister(PSTR("FIFO"), NRF_FIFO_STATUS, 1, nrf);
+	printRegister(PSTR("Dyn pl"), NRF_DYNPD, 1, nrf);
+	printRegister(PSTR("Feature"), NRF_FEATURE, 1, nrf);
 	
 }
 
-void printRegister(const char *str, uint8_t reg, uint8_t len)
+void printRegister(const char *str, uint8_t reg, uint8_t len, nrf24 &nrf)
 {
 	uint8_t data[5];
 	nrf.getRegister(reg, data, len);

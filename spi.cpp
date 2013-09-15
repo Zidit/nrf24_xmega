@@ -3,17 +3,11 @@
 #include "spi.h"
 #include <util/delay.h>
 
-spiDriver::spiDriver(SPI_t* spi, PORT_t* spiPort, const uint8_t ssPin, const uint8_t mosiPin, const uint8_t misoPin, const uint8_t clkPin) : _spi(spi)
+spiDriver::spiDriver(SPI_t* spi, PORT_t* spiPort, const uint8_t mosiPin, const uint8_t misoPin, const uint8_t clkPin) : _spi(spi)
 {
     _spi->CTRL = SPI_MASTER_bm | SPI_MODE0_bm | SPI_PRESCALER_DIV16_gc;
     spiPort->DIRSET = (1 << mosiPin) | (1 << clkPin);
     spiPort->DIRCLR = (1 << misoPin);
-
-	_ssPinBm = 1 << ssPin;
-    _spiPort = spiPort;
-		
-    _spiPort->DIRSET = _ssPinBm;
-    _spiPort->OUTSET = _ssPinBm;
 }
 
 
@@ -37,10 +31,13 @@ void spiDriver::setMode(SPI_MODE_enum mode)
     _spi->CTRL |= mode;
 }
 
-void spiDriver::transmit(uint8_t* data, uint8_t len)
+void spiDriver::transmit(uint8_t* data, uint8_t len, PORT_t* const ssPort, const uint8_t ssPinBm)
 {
+	_ssPinBm = ssPinBm;
+	_ssPort = ssPort;
+
     _isTransmitting = true;
-	_spiPort->OUTCLR = _ssPinBm;
+	_ssPort->OUTCLR = _ssPinBm;
     _dataPtr = data;
     _dataLen = len;
     _bytesSent = 0;
@@ -49,13 +46,15 @@ void spiDriver::transmit(uint8_t* data, uint8_t len)
 
 }
 
-uint8_t spiDriver::transmit(uint8_t data)
+uint8_t spiDriver::transmit(uint8_t data, PORT_t* const ssPort, const uint8_t ssPinBm)
 {
-    _spiPort->OUTCLR = _ssPinBm;
+
+    ssPort->OUTCLR = ssPinBm;
+	
     _spi->DATA = data;
     while (!(_spi->STATUS & SPI_IF_bm));
 
-	_spiPort->OUTSET = _ssPinBm;
+	ssPort->OUTSET = ssPinBm;
     return _spi->DATA;
 }
 
