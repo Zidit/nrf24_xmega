@@ -50,8 +50,8 @@ private:
 	
 	uint8_t _buffer[32];
 	
-	nrf_packet* rx_buffer;
-	uint8_t		rx_buffer_len;
+	nrf_packet* packet_buffer;
+	uint8_t		packet_buffer_len;
 
 	void setIqrPin(PORT_t* const iqrPort, const uint8_t iqrPin);
     void setCePin(PORT_t* const cePort, const uint8_t cePin);

@@ -112,8 +112,8 @@ void nrf24::sendData(nrf_packet* data, uint8_t payload_len)
 void nrf24::reciveData(nrf_packet* data, uint8_t payload_len)
 {
 	data->status = NRF_R_RX_PAYLOAD;
-	rx_buffer = data;
-	rx_buffer_len = payload_len + 1;
+	packet_buffer = data;
+	packet_buffer_len = payload_len + 1;
 	
 	state = rx_listen;
 	_cePort->OUTSET = _cePinBm;
@@ -126,8 +126,10 @@ void nrf24::primaryRx()
 	flushTx();
 	flushRx();
 	
-	uint8_t status = NRF_PRIM_RX_bm | NRF_PWR_UP_bm | NRF_EN_CRC_bm;
-	setRegister(NRF_CONFIG, &status, 1);
+	uint8_t status = NRF_RX_DR_bm | NRF_TX_DS_bm | NRF_MAX_RT_bm;
+	uint8_t config = NRF_PRIM_RX_bm | NRF_PWR_UP_bm | NRF_EN_CRC_bm;
+	setRegister(NRF_STATUS, &status, 1);
+	setRegister(NRF_CONFIG, &config, 1);
 	
 	state = rx_idle;
 }
@@ -139,8 +141,10 @@ void nrf24::primaryTx()
 	flushTx();
 	flushRx();
 
-	uint8_t status = NRF_PWR_UP_bm | NRF_EN_CRC_bm;
-	setRegister(NRF_CONFIG, &status, 1);
+	uint8_t status = NRF_RX_DR_bm | NRF_TX_DS_bm | NRF_MAX_RT_bm;
+	uint8_t config = NRF_PWR_UP_bm | NRF_EN_CRC_bm;
+	setRegister(NRF_STATUS, &status, 1);
+	setRegister(NRF_CONFIG, &config, 1);
 	
 	state = tx_idle;
 }
@@ -162,8 +166,6 @@ void nrf24::spiInterrupt()
 	switch (state){
 	case tx_send:
 		_cePort->OUTSET = _cePinBm;
-		_delay_us(20);
-		_cePort->OUTCLR = _cePinBm;
 		state = tx_wait_ack;
 		
 		break;
@@ -185,13 +187,25 @@ void nrf24::spiInterrupt()
 
 void nrf24::pinInterrupt()
 {
-	if (state == rx_listen)
-	{
+	switch (state){
+	case rx_listen:
 		_cePort->OUTCLR = _cePinBm;
 		state = rx_read;
 		
 		_spi->flush();
-		_spi->transmit((uint8_t*)rx_buffer, rx_buffer_len, _ssPort, _ssPinBm);
+		_spi->transmit((uint8_t*)packet_buffer, packet_buffer_len, _ssPort, _ssPinBm);
+		
+		break;
+	
+	case tx_wait_ack:
+		_cePort->OUTCLR = _cePinBm;
+		packet_buffer->status = getStatus();
+		state = tx_idle;
+
+		break;
+		
+	default:
+		return;
 		
 	}
 }

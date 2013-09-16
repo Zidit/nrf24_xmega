@@ -115,6 +115,21 @@ int main(void)
 	debug.sendChar('\n');	
 	
 
+	
+
+	nrf1.reciveData(&rx_data,16);
+	
+	_delay_ms(200);
+	
+	for(uint8_t i = 0; i < 16; i++)
+		tx_data.data[i] = i + 65;
+	nrf0.sendData(&tx_data, 16);
+	
+	_delay_ms(200);
+
+	debug.sendString((char*)rx_data.data);
+	debug.sendChar('\n');	
+	
 
     while(1)
     {
