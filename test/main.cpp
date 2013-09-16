@@ -49,7 +49,7 @@ nrf24 nrf1(&nrfSpi, &PORTD, 0, &PORTD, 1, &PORTD, 2);
 //ISR (SPIC_INT_vect) { if(nrfSpi.interrupt(&SPIC)) nrf.spiInterrupt(); }
 ISR (PORTC_INT0_vect) {nrf0.pinInterrupt();}
 ISR (PORTD_INT0_vect) {nrf1.pinInterrupt();}
-ISR (SPIC_INT_vect) { nrfSpi.interrupt();}
+ISR (SPIC_INT_vect) { if(nrfSpi.interrupt()) {nrf0.spiInterrupt(); nrf1.spiInterrupt();}}
 
 
 int main(void)
@@ -101,15 +101,21 @@ int main(void)
 	printAllRegisters(nrf1);
 	debug.sendChar('\n');	
 	
+	nrf_packet rx_data;
+	nrf1.reciveData(&rx_data,16);
+	
 	_delay_ms(200);
 	nrf_packet tx_data = {0,"jepa jee"};
 	nrf0.sendData(&tx_data, 16);
 	
 	_delay_ms(200);
-	nrf_packet rx_data;
-	nrf1.reciveData(&rx_data,16);
+
 	
 	debug.sendString((char*)rx_data.data);
+	debug.sendChar('\n');	
+	
+
+
     while(1)
     {
         uint8_t data;

@@ -5,7 +5,7 @@
 #include <avr/io.h>
 #include "spi.h"
 
-enum nrf_state {off, rx_idle, rx_set_reg, rx_listen, rx_irq, rx_read, rx_recived, tx_idle, tx_set_reg, tx_send, tx_wait_ack, tx_ok, tx_fail};
+enum nrf_state {off, rx_idle, rx_set_reg, rx_listen, rx_read, rx_recived, tx_idle, tx_set_reg, tx_send, tx_wait_ack, tx_ok, tx_fail};
 
 typedef struct {
 	uint8_t status;
@@ -20,6 +20,7 @@ public:
 	
 	void primaryRx();
 	void primaryTx();
+	void powerOff();
 
     void setRegister(uint8_t reg, uint8_t* data, uint8_t len);
     void getRegister(uint8_t reg, uint8_t* data, uint8_t len);
@@ -29,10 +30,11 @@ public:
 	void flushTx();
 	void flushRx();
     uint8_t getStatus();
+	nrf_state getState() {return state;}
 
-    void spiInterrupt(){;}
-    void pinInterrupt(){;}
-
+    void spiInterrupt();
+    void pinInterrupt();
+	
 private:
     spiDriver* _spi;
 	nrf_state state;
@@ -47,6 +49,9 @@ private:
     uint8_t _ssPinBm;
 	
 	uint8_t _buffer[32];
+	
+	nrf_packet* rx_buffer;
+	uint8_t		rx_buffer_len;
 
 	void setIqrPin(PORT_t* const iqrPort, const uint8_t iqrPin);
     void setCePin(PORT_t* const cePort, const uint8_t cePin);

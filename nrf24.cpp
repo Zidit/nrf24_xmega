@@ -17,6 +17,8 @@ nrf24::nrf24(spiDriver* const spi, PORT_t* const ssPort, const uint8_t ssPin, PO
     _spi->setSpeed(SPI_PRESCALER_DIV4_gc, true);
     _spi->enable();
 	
+	state = off;
+	
 }
 
 void nrf24::setIqrPin(PORT_t* const iqrPort, const uint8_t iqrPin)
@@ -97,52 +99,24 @@ void nrf24::flushRx()
 	_spi->transmit(NRF_FLUSH_RX, _ssPort, _ssPinBm);
 }
 
-/*
-void nrf24::sendData(uint8_t* data, uint8_t len)
-{
-	_buffer[0] = NRF_W_TX_PAYLOAD;
-	for(uint8_t i = 0; i < len; i++)
-		_buffer[i + 1] = data[i];
-		
-	_spi->flush();
-	_spi->transmit(_buffer, len + 1, _ssPort, _ssPinBm);
-	_spi->flush();
-	
-	_cePort->OUTSET = _cePinBm;
-	_delay_us(20);
-	_cePort->OUTCLR = _cePinBm;
-
-}*/
 
 void nrf24::sendData(nrf_packet* data, uint8_t payload_len)
 {
-		
-	_spi->flush();
 	data->status = NRF_W_TX_PAYLOAD;
-	_spi->transmit((uint8_t*)data, payload_len + 1, _ssPort, _ssPinBm);
-	_spi->flush();
+	state = tx_send;
 	
-	_cePort->OUTSET = _cePinBm;
-	_delay_us(20);
-	_cePort->OUTCLR = _cePinBm;
-
+	_spi->flush();
+	_spi->transmit((uint8_t*)data, payload_len + 1, _ssPort, _ssPinBm);
 }
 
 void nrf24::reciveData(nrf_packet* data, uint8_t payload_len)
 {
-	_cePort->OUTCLR = _cePinBm;
-
-	_spi->flush();
 	data->status = NRF_R_RX_PAYLOAD;
-	_spi->transmit((uint8_t*)data, payload_len + 1, _ssPort, _ssPinBm);
-	_spi->flush();
+	rx_buffer = data;
+	rx_buffer_len = payload_len + 1;
 	
-
-	uint8_t status = NRF_RX_DR_bm;
-	setRegister(NRF_STATUS, &status, 1);
-	
+	state = rx_listen;
 	_cePort->OUTSET = _cePinBm;
-		
 }
 
 void nrf24::primaryRx()
@@ -155,8 +129,7 @@ void nrf24::primaryRx()
 	uint8_t status = NRF_PRIM_RX_bm | NRF_PWR_UP_bm | NRF_EN_CRC_bm;
 	setRegister(NRF_CONFIG, &status, 1);
 	
-	_cePort->OUTSET = _cePinBm;
-	
+	state = rx_idle;
 }
 
 void nrf24::primaryTx()
@@ -168,6 +141,59 @@ void nrf24::primaryTx()
 
 	uint8_t status = NRF_PWR_UP_bm | NRF_EN_CRC_bm;
 	setRegister(NRF_CONFIG, &status, 1);
+	
+	state = tx_idle;
+}
+
+void nrf24::powerOff()
+{
+	_cePort->OUTCLR = _cePinBm;
+
+	uint8_t status = NRF_EN_CRC_bm;
+	setRegister(NRF_CONFIG, &status, 1);
+	
+	state = off;
+
+}
+
+
+void nrf24::spiInterrupt()
+{
+	switch (state){
+	case tx_send:
+		_cePort->OUTSET = _cePinBm;
+		_delay_us(20);
+		_cePort->OUTCLR = _cePinBm;
+		state = tx_wait_ack;
+		
+		break;
+	
+	case rx_read:
+		{
+		uint8_t status = NRF_RX_DR_bm;
+		setRegister(NRF_STATUS, &status, 1);		
+		state = rx_recived;
+		
+		break;
+		}
+	
+	default:
+		return;
+	
+	}
+}
+
+void nrf24::pinInterrupt()
+{
+	if (state == rx_listen)
+	{
+		_cePort->OUTCLR = _cePinBm;
+		state = rx_read;
+		
+		_spi->flush();
+		_spi->transmit((uint8_t*)rx_buffer, rx_buffer_len, _ssPort, _ssPinBm);
+		
+	}
 }
 
 
