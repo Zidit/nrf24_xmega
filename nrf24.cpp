@@ -54,69 +54,70 @@ void nrf24::setSsPin(PORT_t* const ssPort, const uint8_t ssPin)
     _ssPort->OUTSET = _ssPinBm;
 }
 
-void nrf24::setRegister(uint8_t reg, uint8_t data)
+uint8_t nrf24::setRegister(uint8_t reg, uint8_t data)
 {
+	uint8_t buffer[2];
+	buffer[0] = NRF_W_REGISTER | (reg & 0x1F);
+	buffer[1] = data;
+	
+	_spi->transmit(buffer, 2, _ssPort, _ssPinBm);
 	_spi->flush();
-
-	_buffer[0] = NRF_W_REGISTER | (reg & 0x1F);
-	_buffer[1] = data;
 	
-	_spi->transmit(_buffer, 2, _ssPort, _ssPinBm);
-	
+	return buffer[0];
 }
 
 uint8_t nrf24::getRegister(uint8_t reg)
 {
-	_spi->flush();
-	_buffer[0] = NRF_R_REGISTER | (reg & 0x1F);
-	_spi->transmit(_buffer, 2, _ssPort, _ssPinBm);
+
+	uint8_t buffer[2];
+	buffer[0] = NRF_R_REGISTER | (reg & 0x1F);
 	
+	_spi->transmit(buffer, 2, _ssPort, _ssPinBm);
 	_spi->flush();
-	return _buffer[1];
+	
+	return buffer[1];
 }
 
 void nrf24::setRegister(uint8_t reg, uint8_t* data, uint8_t len)
 {
-	_spi->flush();	
-	
 	if (len > 5) len = 5;
-	_buffer[0] = NRF_W_REGISTER | (reg & 0x1F);
+	
+	uint8_t buffer[6];
+	buffer[0] = NRF_W_REGISTER | (reg & 0x1F);
+	
 	for(uint8_t i = 0; i < len; i++)
-		_buffer[i + 1] = data[i];
-		
-	_spi->transmit(_buffer, len + 1, _ssPort, _ssPinBm);
+		buffer[i + 1] = data[i];
+			
+	_spi->transmit(buffer, len + 1, _ssPort, _ssPinBm);
+	_spi->flush();	
 }
 
 void nrf24::getRegister(uint8_t reg, uint8_t* data, uint8_t len)
 {	
-	_spi->flush();
-	
 	if (len > 5) len = 5;
-	_buffer[0] = NRF_R_REGISTER | (reg & 0x1F);
-	_spi->transmit(_buffer, len + 1, _ssPort, _ssPinBm);
 	
+	uint8_t buffer[6];
+	buffer[0] = NRF_R_REGISTER | (reg & 0x1F);
+	
+	_spi->transmit(buffer, len + 1, _ssPort, _ssPinBm);
 	_spi->flush();
 	
 	for(uint8_t i = 0; i < len; i++)
-		data[i] = _buffer[i + 1];		
+		data[i] = buffer[i + 1];		
 }
 
-uint8_t nrf24::getStatus(){
-	
-	_spi->flush();
+uint8_t nrf24::getStatus()
+{
 	return _spi->transmit(NRF_NOP, _ssPort, _ssPinBm);
-	
 }
 
 void nrf24::flushTx()
 {
-	_spi->flush();
 	_spi->transmit(NRF_FLUSH_TX, _ssPort, _ssPinBm);
 }
 
 void nrf24::flushRx()
 {
-	_spi->flush();
 	_spi->transmit(NRF_FLUSH_RX, _ssPort, _ssPinBm);
 }
 
@@ -126,7 +127,6 @@ void nrf24::sendData(nrf_packet* data, uint8_t payload_len)
 	data->status = NRF_W_TX_PAYLOAD;
 	state = tx_send;
 	
-	_spi->flush();
 	_spi->transmit((uint8_t*)data, payload_len + 1, _ssPort, _ssPinBm);
 }
 
@@ -180,14 +180,17 @@ void nrf24::spiInterrupt()
 {
 	switch (state){
 	case tx_send:
-		setRegister(NRF_STATUS, NRF_TX_DS_bm | NRF_MAX_RT_bm);
 		_cePort->OUTSET = _cePinBm;
 		state = tx_wait_ack;
 		
 		break;
 	
 	case rx_read:
-		setRegister(NRF_STATUS, NRF_RX_DR_bm);
+		if(_spi->isTransmitting()) return;
+		
+		_buffer[0] = NRF_W_REGISTER | (NRF_STATUS & 0x1F);
+		_buffer[1] = NRF_RX_DR_bm;
+		_spi->transmit(_buffer, 2, _ssPort, _ssPinBm);
 		state = rx_recived;
 		
 		break;
@@ -211,8 +214,8 @@ void nrf24::pinInterrupt()
 		break;
 	
 	case tx_wait_ack:
-		_cePort->OUTCLR = _cePinBm;
-		packet_buffer->status = getStatus();
+		_cePort->OUTCLR = _cePinBm;		
+		packet_buffer->status = setRegister(NRF_STATUS, NRF_TX_DS_bm | NRF_MAX_RT_bm);
 		state = tx_idle;
 
 		break;

@@ -20,7 +20,6 @@ public:
     uint8_t transmit(const uint8_t data, PORT_t* const ssPort, const uint8_t ssPin);
 
     bool isTransmitting() {return _isTransmitting;}
-    bool transmitReady();
     void flush();
 
     bool interrupt()
@@ -28,7 +27,6 @@ public:
         _dataPtr[_bytesSent++] = _spi->DATA;
         if(_dataLen == _bytesSent)
         {
-            _transmitReady = true;
             _isTransmitting = false;
             _spi->INTCTRL = SPI_INTLVL_OFF_gc;
 		    _ssPort->OUTSET = _ssPinBm;
@@ -49,7 +47,6 @@ private:
     uint8_t _ssPinBm;
 
     uint8_t* _dataPtr;
-    volatile bool _transmitReady;
     volatile bool _isTransmitting;
 	uint8_t _bytesSent;
     uint8_t _dataLen;

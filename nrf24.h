@@ -22,15 +22,14 @@ public:
 	void primaryTx();
 	void powerOff();
 
-    void setRegister(uint8_t reg, uint8_t data);
+    uint8_t setRegister(uint8_t reg, uint8_t data);
     uint8_t getRegister(uint8_t reg);	
     void setRegister(uint8_t reg, uint8_t* data, uint8_t len);
     void getRegister(uint8_t reg, uint8_t* data, uint8_t len);
     void sendData(nrf_packet* data, uint8_t payload_len);
 	void reciveData(nrf_packet* data, uint8_t payload_len);
 	
-	void flushTx();
-	void flushRx();
+
     uint8_t getStatus();
 	nrf_state getState() {return state;}
 
@@ -59,6 +58,9 @@ private:
     void setCePin(PORT_t* const cePort, const uint8_t cePin);
 	void setSsPin(PORT_t* const ssPort, const uint8_t ssPin);
 
+	void flushTx();
+	void flushRx();
+	
 };
 
 

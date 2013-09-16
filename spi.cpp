@@ -33,11 +33,13 @@ void spiDriver::setMode(SPI_MODE_enum mode)
 
 void spiDriver::transmit(uint8_t* data, uint8_t len, PORT_t* const ssPort, const uint8_t ssPinBm)
 {
+	while(_isTransmitting);
+    _isTransmitting = true;
+	
 	_ssPinBm = ssPinBm;
 	_ssPort = ssPort;
-
-    _isTransmitting = true;
 	_ssPort->OUTCLR = _ssPinBm;
+	
     _dataPtr = data;
     _dataLen = len;
     _bytesSent = 0;
@@ -58,12 +60,6 @@ uint8_t spiDriver::transmit(uint8_t data, PORT_t* const ssPort, const uint8_t ss
     return _spi->DATA;
 }
 
-bool spiDriver::transmitReady()
-{
-    bool ret = _transmitReady;
-    _transmitReady = false;
-    return ret;
-}
 
 void spiDriver::flush()
 {
