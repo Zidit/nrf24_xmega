@@ -22,12 +22,12 @@ public:
 	void primaryTx();
 	void powerOff();
 
-    uint8_t setRegister(uint8_t reg, uint8_t data);
-    uint8_t getRegister(uint8_t reg);	
-    void setRegister(uint8_t reg, uint8_t* data, uint8_t len);
-    void getRegister(uint8_t reg, uint8_t* data, uint8_t len);
-    void sendData(nrf_packet* data, uint8_t payload_len);
-	void reciveData(nrf_packet* data, uint8_t payload_len);
+    uint8_t setRegister(const uint8_t reg, const uint8_t data);
+    uint8_t getRegister(const uint8_t reg);	
+    void setRegister(const uint8_t reg, const uint8_t* const data, const uint8_t len);
+    void getRegister(const uint8_t reg, uint8_t* const data, const uint8_t len);
+    void sendData(nrf_packet* const data, const uint8_t payload_len);
+	void reciveData(nrf_packet* const data, const uint8_t payload_len);
 	
 
     uint8_t getStatus();
@@ -48,9 +48,7 @@ private:
 	
 	PORT_t* _ssPort;
     uint8_t _ssPinBm;
-	
-	uint8_t _buffer[6];
-	
+		
 	nrf_packet* packet_buffer;
 	uint8_t		packet_buffer_len;
 
