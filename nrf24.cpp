@@ -62,6 +62,7 @@ void nrf24::setRegister(uint8_t reg, uint8_t data)
 	_buffer[1] = data;
 	
 	_spi->transmit(_buffer, 2, _ssPort, _ssPinBm);
+	
 }
 
 uint8_t nrf24::getRegister(uint8_t reg)
@@ -77,11 +78,12 @@ uint8_t nrf24::getRegister(uint8_t reg)
 void nrf24::setRegister(uint8_t reg, uint8_t* data, uint8_t len)
 {
 	_spi->flush();	
+	
+	if (len > 5) len = 5;
 	_buffer[0] = NRF_W_REGISTER | (reg & 0x1F);
 	for(uint8_t i = 0; i < len; i++)
 		_buffer[i + 1] = data[i];
 		
-	
 	_spi->transmit(_buffer, len + 1, _ssPort, _ssPinBm);
 }
 
@@ -89,6 +91,7 @@ void nrf24::getRegister(uint8_t reg, uint8_t* data, uint8_t len)
 {	
 	_spi->flush();
 	
+	if (len > 5) len = 5;
 	_buffer[0] = NRF_R_REGISTER | (reg & 0x1F);
 	_spi->transmit(_buffer, len + 1, _ssPort, _ssPinBm);
 	
@@ -177,6 +180,7 @@ void nrf24::spiInterrupt()
 {
 	switch (state){
 	case tx_send:
+		setRegister(NRF_STATUS, NRF_TX_DS_bm | NRF_MAX_RT_bm);
 		_cePort->OUTSET = _cePinBm;
 		state = tx_wait_ack;
 		

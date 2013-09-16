@@ -50,7 +50,7 @@ private:
 	PORT_t* _ssPort;
     uint8_t _ssPinBm;
 	
-	uint8_t _buffer[32];
+	uint8_t _buffer[6];
 	
 	nrf_packet* packet_buffer;
 	uint8_t		packet_buffer_len;
