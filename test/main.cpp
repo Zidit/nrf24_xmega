@@ -87,6 +87,7 @@ int main(void)
 	nrf0.setRegister(NRF_RX_PW_P1, &tmp, 1);
 	nrf1.setRegister(NRF_RX_PW_P0, &tmp, 1);
 	nrf1.setRegister(NRF_RX_PW_P1, &tmp, 1);
+
 	
 	_delay_ms(10);
 	
@@ -101,14 +102,14 @@ int main(void)
 	debug.sendChar('\n');	
 	
 	_delay_ms(200);
-	uint8_t tx_data[16] = "jepa jee";
-	uint8_t rx_data[16];
-	nrf0.sendData(tx_data, 16);
+	nrf_packet tx_data = {0,"jepa jee"};
+	nrf0.sendData(&tx_data, 16);
 	
 	_delay_ms(200);
-	nrf1.reciveData(rx_data,16);
+	nrf_packet rx_data;
+	nrf1.reciveData(&rx_data,16);
 	
-	debug.sendString((char*)rx_data);
+	debug.sendString((char*)rx_data.data);
     while(1)
     {
         uint8_t data;

@@ -5,26 +5,29 @@
 #include <avr/io.h>
 #include "spi.h"
 
+enum nrf_state {off, rx_idle, rx_set_reg, rx_listen, rx_irq, rx_read, rx_recived, tx_idle, tx_set_reg, tx_send, tx_wait_ack, tx_ok, tx_fail};
+
+typedef struct {
+	uint8_t status;
+	uint8_t data[32];
+} nrf_packet;
 
 
 class nrf24
 {
 public:
     nrf24(spiDriver* const spi, PORT_t* const ssPort, const uint8_t ssPin, PORT_t* const iqrPort, const uint8_t iqrPin, PORT_t* const cePort, const uint8_t cePin);
-    void setIqrPin(PORT_t* const iqrPort, const uint8_t iqrPin);
-    void setCePin(PORT_t* const cePort, const uint8_t cePin);
-	void setSsPin(PORT_t* const ssPort, const uint8_t ssPin);
 	
 	void primaryRx();
 	void primaryTx();
 
     void setRegister(uint8_t reg, uint8_t* data, uint8_t len);
     void getRegister(uint8_t reg, uint8_t* data, uint8_t len);
-    void sendData(uint8_t* data, uint8_t len);
-    void reciveData(uint8_t* data, uint8_t len);
+    void sendData(nrf_packet* data, uint8_t payload_len);
+	void reciveData(nrf_packet* data, uint8_t payload_len);
+	
 	void flushTx();
 	void flushRx();
-
     uint8_t getStatus();
 
     void spiInterrupt(){;}
@@ -32,7 +35,7 @@ public:
 
 private:
     spiDriver* _spi;
-	uint8_t mode;
+	nrf_state state;
 
     PORT_t* _iqrPort;
     uint8_t _iqrPinBm;
@@ -44,6 +47,10 @@ private:
     uint8_t _ssPinBm;
 	
 	uint8_t _buffer[32];
+
+	void setIqrPin(PORT_t* const iqrPort, const uint8_t iqrPin);
+    void setCePin(PORT_t* const cePort, const uint8_t cePin);
+	void setSsPin(PORT_t* const ssPort, const uint8_t ssPin);
 
 };
 
