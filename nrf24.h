@@ -5,7 +5,7 @@
 #include <avr/io.h>
 #include "spi.h"
 
-enum nrf_state {off, rx_idle, rx_set_reg, rx_listen, rx_read, rx_recived, tx_idle, tx_set_reg, tx_send, tx_wait_ack};
+enum nrf_state {off, rx_idle, rx_set_reg, rx_listen, rx_read, tx_idle, tx_set_reg, tx_send, tx_wait_ack};
 
 typedef struct {
 	uint8_t status;
@@ -29,7 +29,6 @@ public:
     void sendData(nrf_packet* const data, const uint8_t payload_len);
 	void reciveData(nrf_packet* const data, const uint8_t payload_len);
 	
-
     uint8_t getStatus();
 	nrf_state getState() {return state;}
 
@@ -38,7 +37,7 @@ public:
 	
 private:
     spiDriver* _spi;
-	nrf_state state;
+	volatile nrf_state state;
 
     PORT_t* _iqrPort;
     uint8_t _iqrPinBm;

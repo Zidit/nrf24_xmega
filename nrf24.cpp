@@ -56,6 +56,8 @@ void nrf24::setSsPin(PORT_t* const ssPort, const uint8_t ssPin)
 
 uint8_t nrf24::setRegister(const uint8_t reg, const uint8_t data)
 {
+	while (state != rx_idle && state != tx_idle && state != off);
+
 	uint8_t buffer[2];
 	buffer[0] = NRF_W_REGISTER | (reg & 0x1F);
 	buffer[1] = data;
@@ -68,7 +70,8 @@ uint8_t nrf24::setRegister(const uint8_t reg, const uint8_t data)
 
 uint8_t nrf24::getRegister(const uint8_t reg)
 {
-
+	while (state != rx_idle && state != tx_idle && state != off);
+	
 	uint8_t buffer[2];
 	buffer[0] = NRF_R_REGISTER | (reg & 0x1F);
 	
@@ -80,6 +83,8 @@ uint8_t nrf24::getRegister(const uint8_t reg)
 
 void nrf24::setRegister(const uint8_t reg, const uint8_t* const data, const uint8_t len)
 {
+	while (state != rx_idle && state != tx_idle && state != off);
+
 	uint8_t length;
 	if (len > 5) length = 5;
 	else length = len;
@@ -96,6 +101,8 @@ void nrf24::setRegister(const uint8_t reg, const uint8_t* const data, const uint
 
 void nrf24::getRegister(const uint8_t reg, uint8_t* const data, const uint8_t len)
 {	
+	while (state != rx_idle && state != tx_idle && state != off);
+	
 	uint8_t length;
 	if (len > 5) length = 5;
 	else length = len;
@@ -128,6 +135,8 @@ void nrf24::flushRx()
 
 void nrf24::sendData(nrf_packet* const data, const uint8_t payload_len)
 {
+	if(state != tx_idle) return;
+
 	data->status = NRF_W_TX_PAYLOAD;
 	state = tx_send;
 	
@@ -136,6 +145,8 @@ void nrf24::sendData(nrf_packet* const data, const uint8_t payload_len)
 
 void nrf24::reciveData(nrf_packet* const data, const uint8_t payload_len)
 {
+	if(state != rx_idle) return;
+
 	data->status = NRF_R_RX_PAYLOAD;
 	packet_buffer = data;
 	packet_buffer_len = payload_len + 1;
@@ -146,6 +157,8 @@ void nrf24::reciveData(nrf_packet* const data, const uint8_t payload_len)
 
 void nrf24::primaryRx()
 {
+	while (state != rx_idle && state != tx_idle && state != off);
+	
 	_cePort->OUTCLR = _cePinBm;
 
 	flushTx();
@@ -159,6 +172,8 @@ void nrf24::primaryRx()
 
 void nrf24::primaryTx()
 {
+	while (state != rx_idle && state != tx_idle && state != off);
+	
 	_cePort->OUTCLR = _cePinBm;
 	
 	flushTx();
@@ -172,10 +187,10 @@ void nrf24::primaryTx()
 
 void nrf24::powerOff()
 {
-	_cePort->OUTCLR = _cePinBm;
+	while (state != rx_idle && state != tx_idle && state != off);
 
+	_cePort->OUTCLR = _cePinBm;
 	setRegister(NRF_CONFIG, NRF_EN_CRC_bm);
-	
 	state = off;
 }
 
@@ -196,7 +211,7 @@ void nrf24::spiInterrupt()
 			static uint8_t buf[2] = { NRF_W_REGISTER | NRF_STATUS , NRF_RX_DR_bm};
 			_spi->transmit(buf, 2, _ssPort, _ssPinBm);
 
-			state = rx_recived;
+			state = rx_idle;
 			break;
 		}
 		default:
@@ -213,15 +228,14 @@ void nrf24::pinInterrupt()
 			_cePort->OUTCLR = _cePinBm;
 			state = rx_read;
 			
-			_spi->flush();
 			_spi->transmit((uint8_t*)packet_buffer, packet_buffer_len, _ssPort, _ssPinBm);
 			
 			break;
 		
 		case tx_wait_ack:
 			_cePort->OUTCLR = _cePinBm;		
-			packet_buffer->status = setRegister(NRF_STATUS, NRF_TX_DS_bm | NRF_MAX_RT_bm);
 			state = tx_idle;
+			packet_buffer->status = setRegister(NRF_STATUS, NRF_TX_DS_bm | NRF_MAX_RT_bm);
 
 			break;
 			
