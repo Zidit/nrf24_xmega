@@ -5,7 +5,7 @@
 #include <avr/io.h>
 #include "spi.h"
 
-enum nrf_state {off, rx_idle, rx_set_reg, rx_listen, rx_read, rx_recived, tx_idle, tx_set_reg, tx_send, tx_wait_ack, tx_ok, tx_fail};
+enum nrf_state {off, rx_idle, rx_set_reg, rx_listen, rx_read, rx_recived, tx_idle, tx_set_reg, tx_send, tx_wait_ack};
 
 typedef struct {
 	uint8_t status;
@@ -22,6 +22,8 @@ public:
 	void primaryTx();
 	void powerOff();
 
+    void setRegister(uint8_t reg, uint8_t data);
+    uint8_t getRegister(uint8_t reg);	
     void setRegister(uint8_t reg, uint8_t* data, uint8_t len);
     void getRegister(uint8_t reg, uint8_t* data, uint8_t len);
     void sendData(nrf_packet* data, uint8_t payload_len);

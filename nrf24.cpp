@@ -30,7 +30,7 @@ void nrf24::setIqrPin(PORT_t* const iqrPort, const uint8_t iqrPin)
 
     *(&(_iqrPort->PIN0CTRL) + iqrPin) = PORT_ISC_FALLING_gc;
     _iqrPort->INT0MASK = _iqrPinBm;
-    _iqrPort->INTCTRL = PORT_INT0LVL_MED_gc;
+    _iqrPort->INTCTRL = PORT_INT0LVL_LO_gc;
 
 
 }
@@ -54,14 +54,34 @@ void nrf24::setSsPin(PORT_t* const ssPort, const uint8_t ssPin)
     _ssPort->OUTSET = _ssPinBm;
 }
 
-void nrf24::setRegister(uint8_t reg, uint8_t* data, uint8_t len)
+void nrf24::setRegister(uint8_t reg, uint8_t data)
 {
 	_spi->flush();
+
+	_buffer[0] = NRF_W_REGISTER | (reg & 0x1F);
+	_buffer[1] = data;
 	
+	_spi->transmit(_buffer, 2, _ssPort, _ssPinBm);
+}
+
+uint8_t nrf24::getRegister(uint8_t reg)
+{
+	_spi->flush();
+	_buffer[0] = NRF_R_REGISTER | (reg & 0x1F);
+	_spi->transmit(_buffer, 2, _ssPort, _ssPinBm);
+	
+	_spi->flush();
+	return _buffer[1];
+}
+
+void nrf24::setRegister(uint8_t reg, uint8_t* data, uint8_t len)
+{
+	_spi->flush();	
 	_buffer[0] = NRF_W_REGISTER | (reg & 0x1F);
 	for(uint8_t i = 0; i < len; i++)
 		_buffer[i + 1] = data[i];
 		
+	
 	_spi->transmit(_buffer, len + 1, _ssPort, _ssPinBm);
 }
 
@@ -75,9 +95,7 @@ void nrf24::getRegister(uint8_t reg, uint8_t* data, uint8_t len)
 	_spi->flush();
 	
 	for(uint8_t i = 0; i < len; i++)
-		data[i] = _buffer[i + 1];	
-	
-
+		data[i] = _buffer[i + 1];		
 }
 
 uint8_t nrf24::getStatus(){
@@ -126,10 +144,8 @@ void nrf24::primaryRx()
 	flushTx();
 	flushRx();
 	
-	uint8_t status = NRF_RX_DR_bm | NRF_TX_DS_bm | NRF_MAX_RT_bm;
-	uint8_t config = NRF_PRIM_RX_bm | NRF_PWR_UP_bm | NRF_EN_CRC_bm;
-	setRegister(NRF_STATUS, &status, 1);
-	setRegister(NRF_CONFIG, &config, 1);
+	setRegister(NRF_STATUS, NRF_RX_DR_bm | NRF_TX_DS_bm | NRF_MAX_RT_bm);
+	setRegister(NRF_CONFIG, NRF_PRIM_RX_bm | NRF_PWR_UP_bm | NRF_EN_CRC_bm);
 	
 	state = rx_idle;
 }
@@ -141,10 +157,8 @@ void nrf24::primaryTx()
 	flushTx();
 	flushRx();
 
-	uint8_t status = NRF_RX_DR_bm | NRF_TX_DS_bm | NRF_MAX_RT_bm;
-	uint8_t config = NRF_PWR_UP_bm | NRF_EN_CRC_bm;
-	setRegister(NRF_STATUS, &status, 1);
-	setRegister(NRF_CONFIG, &config, 1);
+	setRegister(NRF_STATUS, NRF_RX_DR_bm | NRF_TX_DS_bm | NRF_MAX_RT_bm);
+	setRegister(NRF_CONFIG, NRF_PWR_UP_bm | NRF_EN_CRC_bm);
 	
 	state = tx_idle;
 }
@@ -153,11 +167,9 @@ void nrf24::powerOff()
 {
 	_cePort->OUTCLR = _cePinBm;
 
-	uint8_t status = NRF_EN_CRC_bm;
-	setRegister(NRF_CONFIG, &status, 1);
+	setRegister(NRF_CONFIG, NRF_EN_CRC_bm);
 	
 	state = off;
-
 }
 
 
@@ -171,13 +183,10 @@ void nrf24::spiInterrupt()
 		break;
 	
 	case rx_read:
-		{
-		uint8_t status = NRF_RX_DR_bm;
-		setRegister(NRF_STATUS, &status, 1);		
+		setRegister(NRF_STATUS, NRF_RX_DR_bm);
 		state = rx_recived;
 		
 		break;
-		}
 	
 	default:
 		return;

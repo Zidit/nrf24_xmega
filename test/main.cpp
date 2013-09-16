@@ -82,11 +82,11 @@ int main(void)
 	nrf0.primaryTx();
 	nrf1.primaryRx();
 	
-	uint8_t tmp = 16;
-	nrf0.setRegister(NRF_RX_PW_P0, &tmp, 1);
-	nrf0.setRegister(NRF_RX_PW_P1, &tmp, 1);
-	nrf1.setRegister(NRF_RX_PW_P0, &tmp, 1);
-	nrf1.setRegister(NRF_RX_PW_P1, &tmp, 1);
+
+	nrf0.setRegister(NRF_RX_PW_P0, 16);
+	nrf0.setRegister(NRF_RX_PW_P1, 16);
+	nrf1.setRegister(NRF_RX_PW_P0, 16);
+	nrf1.setRegister(NRF_RX_PW_P1, 16);
 
 	
 	_delay_ms(10);
