@@ -77,7 +77,6 @@ int main(void)
 
     debug.sendStringPgm(PSTR("\n\n\nTest \n"));
 	
-	_delay_ms(200);
 
 	nrf0.primaryTx();
 	nrf1.primaryRx();
@@ -89,8 +88,6 @@ int main(void)
 	nrf1.setRegister(NRF_RX_PW_P1, 16);
 
 	
-	_delay_ms(10);
-	
 	debug.sendString("Nrf 0:");
 	debug.sendChar('\n');	
 	printAllRegisters(nrf0);
@@ -101,34 +98,33 @@ int main(void)
 	printAllRegisters(nrf1);
 	debug.sendChar('\n');	
 	
+	
+	
+	
 	nrf_packet rx_data;
-	nrf1.reciveData(&rx_data,16);
+	nrf_packet tx_data = {0,"jepa jee\0"};
 	
-	_delay_ms(200);
-	nrf_packet tx_data = {0,"jepa jee"};
+	nrf1.reciveData(&rx_data,16);
 	nrf0.sendData(&tx_data, 16);
 	
-	_delay_ms(200);
+	while(nrf1.getState() != rx_idle);
 
-	
-	debug.sendString((char*)rx_data.data);
-	debug.sendChar('\n');	
-	
+	for (uint8_t i = 0; i < 16; i++)
+		debug.sendChar(rx_data.data[i]);
+	debug.sendChar('\n');
 
-	
 
+	for (uint8_t i = 0; i < 16; i++)
+		tx_data.data[i] = 65 + i;
+		
 	nrf1.reciveData(&rx_data,16);
-	
-	_delay_ms(200);
-	
-	for(uint8_t i = 0; i < 16; i++)
-		tx_data.data[i] = i + 65;
 	nrf0.sendData(&tx_data, 16);
 	
-	_delay_ms(200);
+	while(nrf1.getState() != rx_idle);
 
-	debug.sendString((char*)rx_data.data);
-	debug.sendChar('\n');	
+	for (uint8_t i = 0; i < 16; i++)
+		debug.sendChar(rx_data.data[i]);
+	debug.sendChar('\n');
 	
 
     while(1)
