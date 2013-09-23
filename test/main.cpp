@@ -101,29 +101,29 @@ int main(void)
 	
 	
 	
-	nrf_packet rx_data;
-	nrf_packet tx_data = {0,"jepa jee\0"};
+	uint8_t rx_data[17];
+	uint8_t tx_data[17] = {0,'t','e','s','t','*',0};
 	
-	nrf1.reciveData(&rx_data,16);
-	nrf0.sendData(&tx_data, 16);
+	nrf1.reciveData(rx_data, 16);
+	nrf0.sendData(tx_data, 16);
 	
 	while(nrf1.getState() != rx_idle);
 
 	for (uint8_t i = 0; i < 16; i++)
-		debug.sendChar(rx_data.data[i]);
+		debug.sendChar(rx_data[i+1]);
 	debug.sendChar('\n');
 
 
 	for (uint8_t i = 0; i < 16; i++)
-		tx_data.data[i] = 65 + i;
+		tx_data[i+1] = 65 + i;
 		
-	nrf1.reciveData(&rx_data,16);
-	nrf0.sendData(&tx_data, 16);
+	nrf1.reciveData(rx_data,16);
+	nrf0.sendData(tx_data, 16);
 	
 	while(nrf1.getState() != rx_idle);
 
 	for (uint8_t i = 0; i < 16; i++)
-		debug.sendChar(rx_data.data[i]);
+		debug.sendChar(rx_data[i+1]);
 	debug.sendChar('\n');
 	
 

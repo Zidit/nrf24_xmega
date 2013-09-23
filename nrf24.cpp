@@ -1,7 +1,6 @@
 
 
 #include "nrf24.h"
-#include <util/delay.h>
 
 
 nrf24::nrf24(spiDriver* const spi, PORT_t* const ssPort, const uint8_t ssPin, PORT_t* const iqrPort, const uint8_t iqrPin, PORT_t* const cePort, const uint8_t cePin)
@@ -133,21 +132,21 @@ void nrf24::flushRx()
 }
 
 
-void nrf24::sendData(nrf_packet* const data, const uint8_t payload_len)
+void nrf24::sendData(uint8_t* const data, const uint8_t payload_len)
 {
 	if(state != tx_idle) return;
 
-	data->status = NRF_W_TX_PAYLOAD;
+	data[0] = NRF_W_TX_PAYLOAD;
 	state = tx_send;
 	
-	_spi->transmit((uint8_t*)data, payload_len + 1, _ssPort, _ssPinBm);
+	_spi->transmit(data, payload_len + 1, _ssPort, _ssPinBm);
 }
 
-void nrf24::reciveData(nrf_packet* const data, const uint8_t payload_len)
+void nrf24::reciveData(uint8_t* const data, const uint8_t payload_len)
 {
 	if(state != rx_idle) return;
 
-	data->status = NRF_R_RX_PAYLOAD;
+	data[0] = NRF_R_RX_PAYLOAD;
 	packet_buffer = data;
 	packet_buffer_len = payload_len + 1;
 	
@@ -228,14 +227,14 @@ void nrf24::pinInterrupt()
 			_cePort->OUTCLR = _cePinBm;
 			state = rx_read;
 			
-			_spi->transmit((uint8_t*)packet_buffer, packet_buffer_len, _ssPort, _ssPinBm);
+			_spi->transmit(packet_buffer, packet_buffer_len, _ssPort, _ssPinBm);
 			
 			break;
 		
 		case tx_wait_ack:
 			_cePort->OUTCLR = _cePinBm;		
 			state = tx_idle;
-			packet_buffer->status = setRegister(NRF_STATUS, NRF_TX_DS_bm | NRF_MAX_RT_bm);
+			packet_buffer[0] = setRegister(NRF_STATUS, NRF_TX_DS_bm | NRF_MAX_RT_bm);
 
 			break;
 			

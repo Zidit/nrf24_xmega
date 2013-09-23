@@ -5,13 +5,7 @@
 #include <avr/io.h>
 #include "spi.h"
 
-enum nrf_state {off, rx_idle, rx_set_reg, rx_listen, rx_read, tx_idle, tx_set_reg, tx_send, tx_wait_ack};
-
-typedef struct {
-	uint8_t status;
-	uint8_t data[32];
-} nrf_packet;
-
+enum nrf_state {off, rx_idle, rx_listen, rx_read, tx_idle, tx_send, tx_wait_ack};
 
 class nrf24
 {
@@ -26,8 +20,8 @@ public:
     uint8_t getRegister(const uint8_t reg);	
     void setRegister(const uint8_t reg, const uint8_t* const data, const uint8_t len);
     void getRegister(const uint8_t reg, uint8_t* const data, const uint8_t len);
-    void sendData(nrf_packet* const data, const uint8_t payload_len);
-	void reciveData(nrf_packet* const data, const uint8_t payload_len);
+    void sendData(uint8_t* const data, const uint8_t payload_len);
+	void reciveData(uint8_t* const data, const uint8_t payload_len);
 	
     uint8_t getStatus();
 	nrf_state getState() {return state;}
@@ -48,7 +42,7 @@ private:
 	PORT_t* _ssPort;
     uint8_t _ssPinBm;
 		
-	nrf_packet* packet_buffer;
+	uint8_t* 	packet_buffer;
 	uint8_t		packet_buffer_len;
 
 	void setIqrPin(PORT_t* const iqrPort, const uint8_t iqrPin);
