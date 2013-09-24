@@ -18,8 +18,8 @@ public:
 
     uint8_t setRegister(const uint8_t reg, const uint8_t data);
     uint8_t getRegister(const uint8_t reg);	
-    void setRegister(const uint8_t reg, const uint8_t* const data, const uint8_t len);
-    void getRegister(const uint8_t reg, uint8_t* const data, const uint8_t len);
+    void setRegisterLong(const uint8_t reg, const uint8_t* const data);
+    void getRegisterLong(const uint8_t reg, uint8_t* const data);
     void sendData(uint8_t* const data, const uint8_t payload_len);
 	void reciveData(uint8_t* const data, const uint8_t payload_len);
 	
@@ -47,10 +47,8 @@ private:
 
 	uint8_t* 	packet_buffer;
 	uint8_t		packet_buffer_len;
-
-	void setIqrPin(PORT_t* const iqrPort, const uint8_t iqrPin);
-    void setCePin(PORT_t* const cePort, const uint8_t cePin);
-	void setSsPin(PORT_t* const ssPort, const uint8_t ssPin);
+	
+	void sendRegister(const uint8_t reg, uint8_t* const data, const uint8_t len);
 	
 };
 

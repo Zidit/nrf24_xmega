@@ -5,10 +5,31 @@
 
 nrf24::nrf24(spiDriver* const spi, PORT_t* const ssPort, const uint8_t ssPin, PORT_t* const iqrPort, const uint8_t iqrPin, PORT_t* const cePort, const uint8_t cePin)
 {
-	setIqrPin(iqrPort, iqrPin);
-	setCePin(cePort, cePin);
-	setSsPin(ssPort, ssPin);
+	//Config iqr pin
+    _iqrPinBm = 1 << iqrPin;
+    _iqrPort = iqrPort;
+
+    _iqrPort->DIRCLR = _iqrPinBm;
+
+    *(&(_iqrPort->PIN0CTRL) + iqrPin) = PORT_ISC_FALLING_gc;
+    _iqrPort->INT0MASK = _iqrPinBm;
+    _iqrPort->INTCTRL = PORT_INT0LVL_LO_gc;
 	
+	//Config ce pin
+    _cePinBm = 1 << cePin;
+    _cePort = cePort;
+
+    _cePort->OUTCLR = _cePinBm;
+    _cePort->DIRSET = _cePinBm;
+
+	//Config ss pin
+    _ssPinBm = 1 << ssPin;
+    _ssPort = ssPort;
+
+    _ssPort->DIRSET = _ssPinBm;
+    _ssPort->OUTSET = _ssPinBm;
+	
+	//Config spi
 	_spi = spi;
 
     _spi->setMasterMode(true);
@@ -20,101 +41,53 @@ nrf24::nrf24(spiDriver* const spi, PORT_t* const ssPort, const uint8_t ssPin, PO
 	
 }
 
-void nrf24::setIqrPin(PORT_t* const iqrPort, const uint8_t iqrPin)
-{
-    _iqrPinBm = 1 << iqrPin;
-    _iqrPort = iqrPort;
 
-    _iqrPort->DIRCLR = _iqrPinBm;
-
-    *(&(_iqrPort->PIN0CTRL) + iqrPin) = PORT_ISC_FALLING_gc;
-    _iqrPort->INT0MASK = _iqrPinBm;
-    _iqrPort->INTCTRL = PORT_INT0LVL_LO_gc;
-
-
-}
-
-void nrf24::setCePin(PORT_t* const cePort, const uint8_t cePin)
-{
-    _cePinBm = 1 << cePin;
-    _cePort = cePort;
-
-    _cePort->OUTCLR = _cePinBm;
-    _cePort->DIRSET = _cePinBm;
-
-}
-
-void nrf24::setSsPin(PORT_t* const ssPort, const uint8_t ssPin)
-{
-    _ssPinBm = 1 << ssPin;
-    _ssPort = ssPort;
-
-    _ssPort->DIRSET = _ssPinBm;
-    _ssPort->OUTSET = _ssPinBm;
-}
-
-uint8_t nrf24::setRegister(const uint8_t reg, const uint8_t data)
+void nrf24::sendRegister(const uint8_t reg, uint8_t* const data, const uint8_t len)
 {
 	while (state != rx_idle && state != tx_idle && state != off);
 
-	uint8_t buffer[2];
-	buffer[0] = NRF_W_REGISTER | (reg & 0x1F);
-	buffer[1] = data;
+	data[0] = NRF_W_REGISTER | (reg & 0x1F);
 	
-	_spi->transmit(buffer, 2, _ssPort, _ssPinBm);
+	_spi->transmit(data, len, _ssPort, _ssPinBm);
 	_spi->flush();
-	
+}
+
+
+uint8_t nrf24::setRegister(const uint8_t reg, const uint8_t data)
+{
+	uint8_t buffer[2];
+	buffer[1] = data;
+	sendRegister(reg, buffer, 2);
 	return buffer[0];
 }
 
 uint8_t nrf24::getRegister(const uint8_t reg)
 {
-	while (state != rx_idle && state != tx_idle && state != off);
-	
 	uint8_t buffer[2];
-	buffer[0] = NRF_R_REGISTER | (reg & 0x1F);
-	
-	_spi->transmit(buffer, 2, _ssPort, _ssPinBm);
-	_spi->flush();
-	
+	sendRegister(reg, buffer, 2);
 	return buffer[1];
 }
 
-void nrf24::setRegister(const uint8_t reg, const uint8_t* const data, const uint8_t len)
+void nrf24::setRegisterLong(const uint8_t reg, const uint8_t* const data)
 {
-	while (state != rx_idle && state != tx_idle && state != off);
-
-	uint8_t length;
-	if (len > 5) length = 5;
-	else length = len;
-	
 	uint8_t buffer[6];
-	buffer[0] = NRF_W_REGISTER | (reg & 0x1F);
 	
-	for(uint8_t i = 0; i < length; i++)
+	for(uint8_t i = 0; i < 5; i++)
 		buffer[i + 1] = data[i];
 			
-	_spi->transmit(buffer, length + 1, _ssPort, _ssPinBm);
-	_spi->flush();	
+	sendRegister(reg, buffer, 6);
 }
 
-void nrf24::getRegister(const uint8_t reg, uint8_t* const data, const uint8_t len)
+void nrf24::getRegisterLong(const uint8_t reg, uint8_t* const data)
 {	
-	while (state != rx_idle && state != tx_idle && state != off);
-	
-	uint8_t length;
-	if (len > 5) length = 5;
-	else length = len;
-	
 	uint8_t buffer[6];
-	buffer[0] = NRF_R_REGISTER | (reg & 0x1F);
+	sendRegister(reg, buffer, 6);
 	
-	_spi->transmit(buffer, length + 1, _ssPort, _ssPinBm);
-	_spi->flush();
-	
-	for(uint8_t i = 0; i < length; i++)
+	for(uint8_t i = 0; i < 5; i++)
 		data[i] = buffer[i + 1];		
 }
+
+
 
 uint8_t nrf24::getStatus()
 {
