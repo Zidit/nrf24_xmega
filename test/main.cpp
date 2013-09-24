@@ -86,7 +86,9 @@ int main(void)
 	nrf0.setRegister(NRF_RX_PW_P1, 16);
 	nrf1.setRegister(NRF_RX_PW_P0, 16);
 	nrf1.setRegister(NRF_RX_PW_P1, 16);
-
+	
+	nrf0.setRegister(NRF_SETUP_RETR, 0x33);
+	nrf1.setRegister(NRF_SETUP_RETR, 0x33);
 	
 	debug.sendString("Nrf 0:");
 	debug.sendChar('\n');	

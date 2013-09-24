@@ -29,6 +29,9 @@ public:
     void spiInterrupt();
     void pinInterrupt();
 	
+	void flushTx();
+	void flushRx();
+	
 private:
     spiDriver* _spi;
 	volatile nrf_state state;
@@ -41,16 +44,13 @@ private:
 	
 	PORT_t* _ssPort;
     uint8_t _ssPinBm;
-		
+
 	uint8_t* 	packet_buffer;
 	uint8_t		packet_buffer_len;
 
 	void setIqrPin(PORT_t* const iqrPort, const uint8_t iqrPin);
     void setCePin(PORT_t* const cePort, const uint8_t cePin);
 	void setSsPin(PORT_t* const ssPort, const uint8_t ssPin);
-
-	void flushTx();
-	void flushRx();
 	
 };
 
