@@ -59,7 +59,7 @@ int main(void)
 
     debug.sendStringPgm(PSTR("\n\n\nBasic example of half-duplex communication\n"));
 	
-	#define PAYLOAD_SIZE 8
+	#define PAYLOAD_SIZE 1
 
 	nrf0.primaryRx();
 

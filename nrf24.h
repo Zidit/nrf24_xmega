@@ -22,6 +22,7 @@ public:
     void getRegisterLong(const uint8_t reg, uint8_t* const data);
     void sendData(uint8_t* const data, const uint8_t payload_len);
 	void reciveData(uint8_t* const data, const uint8_t payload_len);
+	void stopReciving();
 	
     uint8_t getStatus();
 	nrf_state getState() {return state;}

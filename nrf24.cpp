@@ -130,6 +130,15 @@ void nrf24::reciveData(uint8_t* const data, const uint8_t payload_len)
 	_cePort->OUTSET = _cePinBm;
 }
 
+void nrf24::stopReciving()
+{
+	if(state != rx_listen) return;	
+
+	state = rx_idle;	
+	_cePort->OUTCLR = _cePinBm;
+	
+}
+
 void nrf24::primaryRx()
 {
 	while (state == rx_read || state == tx_send || state == tx_wait_ack);

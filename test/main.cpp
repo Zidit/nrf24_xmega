@@ -7,18 +7,16 @@
 #include <stdlib.h>
 
 #include "serial.h"
-#include "utils.h"
 #include "../nrf24.h"
 #include "../spi.h"
 
-void printAllRegisters(nrf24 &nrf);
-void printRegister(const char *str, uint8_t reg, uint8_t len,nrf24 &nrf);
 
 // TX = PC3, RX = PC2
 
 uart debug(&USARTC0, 57600); 
 ISR (USARTC0_RXC_vect){ debug.rxInterrupt(); }
 ISR (USARTC0_DRE_vect){ debug.txInterrupt(); }
+
 
 
 /*
@@ -29,35 +27,20 @@ clk  = PC7
 csn  = PC4
 irq	 = PC1
 ce	 = PC0
-
-nRF 1
-Miso = PC6
-Mosi = PC5
-clk  = PC7
-csn  = PD0
-irq	 = PD1
-ce	 = PD2
-
 */
-
 
 spiDriver nrfSpi(&SPIC, &PORTC, 5, 6, 7);
 nrf24 nrf0(&nrfSpi, &PORTC, 4, &PORTC, 1, &PORTC, 0);
-nrf24 nrf1(&nrfSpi, &PORTD, 0, &PORTD, 1, &PORTD, 2);
 
-
-//ISR (SPIC_INT_vect) { if(nrfSpi.interrupt(&SPIC)) nrf.spiInterrupt(); }
 ISR (PORTC_INT0_vect) {nrf0.pinInterrupt();}
-ISR (PORTD_INT0_vect) {nrf1.pinInterrupt();}
-ISR (SPIC_INT_vect) { if(nrfSpi.interrupt()) {nrf0.spiInterrupt(); nrf1.spiInterrupt();}}
+ISR (SPIC_INT_vect) { if(nrfSpi.interrupt()) nrf0.spiInterrupt();}
+
 
 
 int main(void)
 {
-	srand(12);
 
 	//Config external 16 MHz clock
-	
 	OSC.XOSCCTRL = 0x17; 
 	OSC.CTRL = OSC_XOSCEN_bm;
 	while (!(OSC.STATUS & OSC_XOSCRDY_bm));
@@ -74,80 +57,49 @@ int main(void)
 	sei();
 
 
-
-    debug.sendStringPgm(PSTR("\n\n\nTest \n"));
+    debug.sendStringPgm(PSTR("\n\n\nBasic example of half-duplex communication\n"));
 	
+	#define PAYLOAD_SIZE 1
 
-	nrf0.primaryTx();
-	nrf1.primaryRx();
-	
+	nrf0.primaryRx();
 
-	nrf0.setRegister(NRF_RX_PW_P0, 16);
-	nrf0.setRegister(NRF_RX_PW_P1, 16);
-	nrf1.setRegister(NRF_RX_PW_P0, 16);
-	nrf1.setRegister(NRF_RX_PW_P1, 16);
-	
+	nrf0.setRegister(NRF_RX_PW_P0, PAYLOAD_SIZE);
+	nrf0.setRegister(NRF_RX_PW_P1, PAYLOAD_SIZE);
 	nrf0.setRegister(NRF_SETUP_RETR, 0x33);
-	nrf1.setRegister(NRF_SETUP_RETR, 0x33);
 	
-	debug.sendString("Nrf 0:");
-	debug.sendChar('\n');	
-	printAllRegisters(nrf0);
-	debug.sendChar('\n');		
+	
+	uint8_t rx_data[PAYLOAD_SIZE + 1];
+	uint8_t tx_data[PAYLOAD_SIZE + 1];
 
-	debug.sendString("Nrf 1:");
-	debug.sendChar('\n');	
-	printAllRegisters(nrf1);
-	debug.sendChar('\n');	
-	
-	
-	
-	
-	uint8_t rx_data[17];
-	uint8_t tx_data[17] = {0,'t','e','s','t','*',0};
-	
-	nrf1.reciveData(rx_data, 16);
-	nrf0.sendData(tx_data, 16);
-	
-	while(nrf1.getState() != rx_idle);
-
-	for (uint8_t i = 0; i < 16; i++)
-		debug.sendChar(rx_data[i+1]);
-	debug.sendChar('\n');
+	uint8_t tx_bytes = 0;
 
 
-	for (uint8_t i = 0; i < 16; i++)
-		tx_data[i+1] = 65 + i;
-		
-	nrf1.reciveData(rx_data,16);
-	nrf0.sendData(tx_data, 16);
-	
-	while(nrf1.getState() != rx_idle);
-
-	for (uint8_t i = 0; i < 16; i++)
-		debug.sendChar(rx_data[i+1]);
-	debug.sendChar('\n');
-	
 
     while(1)
     {
-        uint8_t data;
-        if(debug.dataAvailable())
-        {
 
-			data = debug.getChar();
+		nrf0.primaryRx();		
+		nrf0.reciveData(rx_data,PAYLOAD_SIZE);
+		
+		while(nrf0.getState() != rx_idle);
+		_delay_ms(10);
 
-			printRegister(PSTR("nfr 0 status"), NRF_STATUS, 1, nrf0);	
-			printRegister(PSTR("nfr 1 status"), NRF_STATUS, 1, nrf1);
-			debug.sendChar('\n');
+		nrf0.primaryTx();
+		
+		nrf0.sendData(rx_data, PAYLOAD_SIZE);	
+		while(nrf0.getState() != tx_idle);
+	_delay_ms(10);
 
-        }
+ 
+		
+	}
+		
 
-    }
+
 
     return 0;
 }
-
+/*
 void printAllRegisters(nrf24 &nrf)
 {
 	printRegister(PSTR("Config"), NRF_CONFIG, 1, nrf);
@@ -193,4 +145,4 @@ void printRegister(const char *str, uint8_t reg, uint8_t len, nrf24 &nrf)
 		debug.sendHex(data[i]);
 		
 	debug.sendChar('\n');
-}
+}*/ 
